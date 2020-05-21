@@ -1,4 +1,4 @@
-# subserv-mpv-plugin
+# subserv-mpv-plugin for Windows 
 Send subtitles displayed by mpv to your web-browser.
 
 A plugin for https://mpv.io/
