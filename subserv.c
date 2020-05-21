@@ -6,11 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sys/socket.h>
+#include <winsock2.h>
+#include <winsock.h>
 #include <stdlib.h>
-#include <netinet/in.h>
 #include <sys/types.h>
-#include <netdb.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Ws2_32.lib")
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -198,7 +201,7 @@ void json_escape_sub_and_store(char * in_string) {
 
 int subs_html_length;
 
-void send_subs(int client_socket) {
+void send_subs(SOCKET client_socket) {
         
         char read_buf[1024];
 
@@ -252,48 +255,62 @@ void *server_start(void *arg) {
 
     subs_html_length = strlen(subs_html); 
 
-    int sock_fd, client_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
+    SOCKET sock = INVALID_SOCKET;
+    SOCKET client_socket = INVALID_SOCKET;
+    
     
     address.sin_family = AF_INET; 
     address.sin_addr.s_addr = INADDR_ANY; 
     address.sin_port = htons(PORT);
+
+    // Windows Socket Data
+    WSADATA wsaData = {0};
+
+    if(WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
+	fprintf(stderr, "WSAStartup() failed");
+	return 1;
+    }
+
+    fprintf(stdout, "Calling socket with the following parameters: %s, %s, %s", "AF_INET (IPv4)", "SOCK_STREAM (stream)", "unspecified protocol");
+
     
-    int opt = 1;
+    char opt;
     
-    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock_fd == 0) {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) {
         printf("couldn't open socket\n");
         return 0;
     }
         // Forcefully attaching socket to the port 8080 
-    if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) 
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) 
     { 
         printf("couldn't open socket\n");
         return 0;
     }
     
-    if (bind(sock_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0) {
         printf("couldn't bind socket\n");
         return 0;
     }
     
-    if (listen(sock_fd, 3) < 0) {
+    if (listen(sock, 3) < 0) {
         printf("couldn't listen on socket\n");
         return 0;
     }
 
     while(1) {
-        client_socket = accept(sock_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        client_socket = accept(sock, (struct sockaddr *)&address, &addrlen);
         if (client_socket < 0) { 
             printf("couldn't accept client\n");
             return 0;
         }
         
         send_subs(client_socket);
-        close(client_socket);
+        closesocket(client_socket);
     }
+    WSACleanup();
 }
 
 int mpv_open_cplugin(mpv_handle *handle) {
