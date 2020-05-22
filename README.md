@@ -11,8 +11,6 @@ More on the method here: http://learnjapaneseonline.info/2013/11/05/learn-japane
 
 With this plugin and the help of yomichan (https://foosoft.net/projects/yomichan/) it becomes simple to look up definitions and add cards to your anki-deck, while watching japanese subtitled anime in mpv.
 
-![picture showcasing subserv coupled with yomichan](http://i65.tinypic.com/2ufbxqu.jpg)
-
 # Installation:
 to compile and install it basically run:
 ```
